@@ -70,37 +70,21 @@ class Graph:
                 # Then add all of its neighbors to the back of the queue
                 for next_vert in self.vertices[v]:
                     s.push(next_vert)
-    # def dft_recursive(self, starting_vertex):
-    #     """
-    #     Print each vertex in depth-first order
-    #     beginning from starting_vertex.
-    #     This should be done using recursion.
-    #     """
-    #     pass  # TODO
-    def dft_recursive(self, starting_vertex, s=Stack(), visited=set()):
+    def dft_recursive(self, starting_vertex, visited=set()):
         """
         Print each vertex in depth-first order
         beginning from starting_vertex.
         This should be done using recursion.
         """
-        # On the first loop through:
-        # We need to push the starting vertex to the stack
-        if len(visited) == 0 and s.size() == 0:
-            s.push(starting_vertex)
+        # Add current vertex to visited
+        visited.add(starting_vertex)
 
-        # If the queue is not empty...
-        if s.size() > 0:
-            # Dequeue the first vertex
-            v = s.pop()
-            # If that vertex has not been visited...
-            if v not in visited:
-                # Mark it as visited...
-                print(v)
-                visited.add(v)
-                # Then add all of its neighbors to the back of the queue
-                for next_vert in self.vertices[v]:
-                    s.push(next_vert)
-            self.dft_recursive(starting_vertex,s,visited)
+        # Then add all of its unvisited children to the call stack
+        for child in self.vertices[starting_vertex]:
+            if child not in visited:
+                self.dft_recursive(child,visited)
+        
+        return visited
                 
     def bfs(self, starting_vertex, destination_vertex):
         """
@@ -108,18 +92,51 @@ class Graph:
         starting_vertex to destination_vertex in
         breath-first order.
         """
-        pass  # TODO
+        # Create an empty queue and enqueue the starting vertex ID
+        q = Queue()
+        q.enqueue([starting_vertex])
+        # Store found vertices
+        found = []
+        # While the queue is not empty...
+        while q.size() > 0:
+            path = q.dequeue()
+            vertex = path[-1]
+            # If the vertex has not been found
+            if vertex not in found:
+                if vertex is destination_vertex:
+                    return path
+                found.append(vertex)
+                # For each child vertex, add it to the queue of possible paths
+                for next_vertex in self.vertices[vertex]:
+                    new_path = list(path)
+                    new_path.append(next_vertex)
+                    q.enqueue(new_path)
+                
     def dfs(self, starting_vertex, destination_vertex):
         """
         Return a list containing a path from
         starting_vertex to destination_vertex in
         depth-first order.
         """
-        pass  # TODO
-
-
-
-
+        # Create an empty queue and enqueue the starting vertex ID
+        s = Stack()
+        s.push([starting_vertex])
+        # Store found vertices
+        found = []
+        # While the queue is not empty...
+        while s.size() > 0:
+            path = s.pop()
+            vertex = path[-1]
+            # If the vertex has not been found
+            if vertex not in found:
+                if vertex is destination_vertex:
+                    return path
+                found.append(vertex)
+                # For each child vertex, add it to the stack of possible paths
+                for next_vertex in self.vertices[vertex]:
+                    new_path = list(path)
+                    new_path.append(next_vertex)
+                    s.push(new_path)
 
 if __name__ == '__main__':
     graph = Graph()  # Instantiate your graph
@@ -181,7 +198,7 @@ if __name__ == '__main__':
         1, 2, 4, 7, 6, 3, 5
         1, 2, 4, 6, 3, 5, 7
     '''
-    graph.dft_recursive(1)
+    print(graph.dft_recursive(1))
 
     '''
     Valid BFS path:
