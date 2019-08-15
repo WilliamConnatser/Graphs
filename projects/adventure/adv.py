@@ -1,6 +1,7 @@
 from room import Room
 from player import Player
 from world import World
+from queue import LifoQueue
 
 import random
 
@@ -17,12 +18,134 @@ roomGraph={494: [(1, 8), {'e': 457}], 492: [(1, 20), {'e': 400}], 493: [(2, 5), 
 world.loadGraph(roomGraph)
 
 # UNCOMMENT TO VIEW MAP
-world.printRooms()
+#world.printRooms()
 
-player = Player("Name", world.startingRoom)
+player = Player("William", world.startingRoom)
 
-# Fill this out
-traversalPath = []
+class Traversal:
+    def __init__(self,player):
+        self.player = player
+        self.traversal_path = []
+        self.traversal_graph = {}
+        self.add_room()
+
+    '''
+        Room and Player Helpers To Clean Up Syntax Below
+    '''
+    def loc(self):
+        return self.player.currentRoom
+        print(self.player.currentRoom.getExits())
+    def get_room(self, direction):
+        return self.player.currentRoom.getRoomInDirection(direction)
+    def unexplored_exits(self):
+        exits = self.loc().getExits()
+        for direction in exits:
+            if self.get_room(direction).id not in self.traversal_graph:
+                return direction
+        return None
+    def travel(self, direction):
+        self.player.travel(direction)
+
+    '''
+        Adds a room to the graph
+    '''
+    def add_room(self):
+        room = self.loc()
+        if room.id not in self.traversal_graph:
+            directions = ["n", "s", "e", "w"]
+            exits = room.getExits()
+            self.traversal_graph[room.id] = {}
+            for direction in directions:
+                if direction not in exits:
+                    self.traversal_graph[room.id][direction] = None
+                elif self.get_room(direction).id not in self.traversal_graph:
+                    self.traversal_graph[room.id][direction] = '?'
+                else:
+                    self.traversal_graph[room.id][direction] = self.get_room(direction).id
+
+    '''
+        Traverse the map by advancing
+    '''
+    def advance(self):
+        exits = self.loc().getExits()
+        index = 0
+
+        print(self.loc())
+
+        while index < len(exits):
+            direction = exits[index]
+            next_room = self.get_room(direction)
+            print(direction)
+            if next_room.id not in self.traversal_graph:
+                self.traversal_path.append(direction)
+                self.travel(direction)
+                self.add_room()
+                print("Traveled: " + direction)
+                return self.advance()
+            else:
+                index += 1
+
+        return self.backtrack()
+
+    '''
+        Backtrack to first room with an unvisited neighbor
+    '''
+    def backtrack(self):
+        opposite = {"n": "s", "s": "n", "e": "w", "w": "e"}
+        new_path = self.traversal_path.copy()
+        path_index = len(self.traversal_path) - 1
+
+        while path_index >= 0:
+            go_to = opposite[self.traversal_path[path_index]]
+            self.travel(go_to)
+            new_path.append(go_to)
+            if not self.unexplored_exits():
+                path_index -= 1
+            else:
+                self.traversal_path = new_path
+                return self.advance()   
+        return self.traversal_path
+            
+
+game = Traversal(player)
+traversalPath = game.advance()
+print(traversalPath)
+
+
+
+# player = Player("William", world.startingRoom)
+
+# traversalPath = []
+# path_queue = LifoQueue()
+# path_queue.put((player, [player.currentRoom]))
+
+# while not path_queue.empty():
+#     path_data = path_queue.get()
+#     current_player = path_data[0]
+#     current_path = path_data[1]
+#     last_room = current_path[-1]
+#     new_room_found = False
+#     directions = ("n_to","s_to","e_to","w_to")
+
+#     for direction in directions:
+#         neighbor_room = getattr(last_room, direction)
+#         if neighbor_room and neighbor_room not in current_path:
+#             new_path = current_path.copy()
+#             new_path.append(neighbor_room)
+#             new_player = Player(f"William{path_queue.qsize()}", neighbor_room)
+#             path_queue.put((new_player, new_path))
+#             new_room_found = True
+
+#     if not new_room_found:
+#         traversalPath.append(current_path)
+
+
+# for index,path in enumerate(traversalPath):
+#     print(f"Path #{index} Visited {len(path)} Rooms \U00002623\U00002623\U00002623")
+#     path_string = ""
+#     for room in path:
+#         path_string += f"{room.id} >"
+#     print(path_string)
 
 
 
