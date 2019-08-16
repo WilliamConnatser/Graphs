@@ -2,6 +2,10 @@ from room import Room
 from player import Player
 from world import World
 from queue import LifoQueue
+import math
+import sys
+
+sys.setrecursionlimit(7400)
 
 import random
 
@@ -23,21 +27,110 @@ world.loadGraph(roomGraph)
 '''
     Working solution that takes 1.12 million moves....
 '''
-player = Player("William", world.startingRoom)
+# player = Player("William", world.startingRoom)
+
+# class Traversal:
+#     def __init__(self,player):
+#         self.player = player
+#         self.traversal_path = []
+#         self.traversal_graph = {}
+#         self.add_room()
+
+#     '''
+#         Room / Player / Graph Helpers To Clean Up Syntax Below
+#     '''
+#     def loc(self):
+#         return self.player.currentRoom
+#         print(self.player.currentRoom.getExits())
+#     def get_room(self, direction):
+#         return self.player.currentRoom.getRoomInDirection(direction)
+#     def unexplored_exits(self):
+#         exits = self.loc().getExits()
+#         for direction in exits:
+#             if self.get_room(direction).id not in self.traversal_graph:
+#                 return direction
+#         return None
+#     def travel(self, direction):
+#         self.player.travel(direction)
+
+#     '''
+#         Adds a room to the graph
+#     '''
+#     def add_room(self):
+#         room = self.loc()
+#         if room.id not in self.traversal_graph:
+#             directions = ["n", "s", "e", "w"]
+#             exits = room.getExits()
+#             self.traversal_graph[room.id] = {}
+#             for direction in directions:
+#                 if direction not in exits:
+#                     self.traversal_graph[room.id][direction] = None
+#                 else:
+#                     self.traversal_graph[room.id][direction] = self.get_room(direction).id
+
+#     '''
+#         Traverse the map by advancing
+#         DFT until we get to a dead end
+#     '''
+#     def advance(self):
+#         exits = self.loc().getExits()
+#         index = len(exits)-1
+#         while index >= 0:
+#             direction = exits[index]
+#             next_room = self.get_room(direction)
+#             if next_room.id not in self.traversal_graph:
+#                 self.traversal_path.append(direction)
+#                 self.travel(direction)
+#                 self.add_room()
+#                 return self.advance()
+#             else:
+#                 index -= 1
+#         return self.backtrack()
+
+#     '''
+#         Backtrack to first room with an unvisited neighbor
+#         BFT to the last room that has unexplored neighbors
+#     '''
+#     def backtrack(self):
+#         opposite = {"n": "s", "s": "n", "e": "w", "w": "e"}
+#         new_path = self.traversal_path.copy()
+#         path_index = len(self.traversal_path) - 1
+#         while path_index >= 0:
+#             go_to = opposite[self.traversal_path[path_index]]
+#             self.travel(go_to)
+#             new_path.append(go_to)
+#             if not self.unexplored_exits():
+#                 path_index -= 1
+#             else:
+#                 self.traversal_path = new_path
+#                 return self.advance()  
+#         return self.traversal_path
+            
+
+# game = Traversal(player)
+# traversalPath = game.advance()
+# print(game.traversal_graph)
+
+'''
+    Working on this solution now..
+'''
+player = Player("William1", world.startingRoom)
 
 class Traversal:
-    def __init__(self,player):
+    def __init__(self,player, traversal_path=[]):
         self.player = player
-        self.traversal_path = []
+        self.traversal_path = traversal_path
         self.traversal_graph = {}
         self.add_room()
-
+        self.walk_path()
+        self.other_traversals = []
+        self.end_path = self.advance()
     '''
         Room / Player / Graph Helpers To Clean Up Syntax Below
     '''
     def loc(self):
         return self.player.currentRoom
-        print(self.player.currentRoom.getExits())
+        # print(self.player.currentRoom.getExits())
     def get_room(self, direction):
         return self.player.currentRoom.getRoomInDirection(direction)
     def unexplored_exits(self):
@@ -48,6 +141,11 @@ class Traversal:
         return None
     def travel(self, direction):
         self.player.travel(direction)
+    def walk_path(self):
+        for direction in self.traversal_path:
+            self.travel(direction)
+            self.add_room()
+        # print(f"New Traversal Path: {self.traversal_path}")
 
     '''
         Adds a room to the graph
@@ -70,9 +168,21 @@ class Traversal:
     '''
     def advance(self):
         exits = self.loc().getExits()
-        index = len(exits)-1
-        while index >= 0:
-            direction = exits[index]
+        # print(len(exits))
+        if len(exits) > 1:
+            for direction in exits:
+                # print(direction)
+                next_room = self.get_room(direction)
+                if next_room.id not in self.traversal_graph:
+                    # print(f"Splitting to path #{len(self.other_traversals)+2}")
+                    new_player = Player(f"William{len(self.other_traversals)+2}", world.startingRoom)
+                    new_path = self.traversal_path.copy()
+                    new_path.append(direction)
+                    new_traversal = Traversal(new_player,new_path)
+                    self.other_traversals.append(new_traversal)
+            return self.shortest_path()
+        else:
+            direction = exits[0]
             next_room = self.get_room(direction)
             if next_room.id not in self.traversal_graph:
                 self.traversal_path.append(direction)
@@ -80,8 +190,8 @@ class Traversal:
                 self.add_room()
                 return self.advance()
             else:
-                index -= 1
-        return self.backtrack()
+                # print(f"Backtracking {self.traversal_path}")
+                return self.backtrack()
 
     '''
         Backtrack to first room with an unvisited neighbor
@@ -99,12 +209,31 @@ class Traversal:
                 path_index -= 1
             else:
                 self.traversal_path = new_path
-                return self.advance()  
+                return self.advance()
+        return self.shortest_path()
+
+    def shortest_path(self):    
+        print(f"End Path Found: {self.traversal_path}")
+        if len(self.other_traversals) > 0:
+            rooms_visited = -math.inf
+            shortest = math.inf
+            shortest_path = []
+            for traversal in self.other_traversals:
+                print(f"Shortest Path / Rooms Visited = {shortest} / {rooms_visited}")
+                print(f"{traversal.shortest_path()} {len(traversal.traversal_graph.keys())}")
+                print(f"{self.traversal_path} {len(self.traversal_graph.keys())}")
+                if len(traversal.shortest_path()) < shortest and len(traversal.traversal_graph.keys()) >= rooms_visited:
+                    # print("yay")
+                    shortest_path = traversal.shortest_path()
+                    shortest = len(traversal.shortest_path())
+                    rooms_visited = len(traversal.traversal_graph.keys())
+            if shortest < len(self.traversal_path) or len(self.traversal_graph.keys()) < rooms_visited:
+                return shortest_path
         return self.traversal_path
             
 
 game = Traversal(player)
-traversalPath = game.advance()
+traversalPath = game.end_path
 print(game.traversal_graph)
 
 
