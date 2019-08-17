@@ -19,7 +19,7 @@ roomGraph={494: [(1, 8), {'e': 457}], 492: [(1, 20), {'e': 400}], 493: [(2, 5), 
 world.loadGraph(roomGraph)
 
 #UNCOMMENT TO VIEW MAP
-world.printRooms()
+# world.printRooms()
 
 '''
     Working solution that takes 1.12 million moves....
@@ -248,19 +248,20 @@ start_time = time.time()
 permutations = 0
 
 while not path_queue.empty():
+    print(f"Queue Size: {path_queue.qsize()}")
     path_data = path_queue.get()
     current_player = path_data[0]
     current_path = path_data[1]
     rooms_visited = path_data[2]
     new_room_found = False
     directions = current_player.currentRoom.getExits()
-    print(f"\n\nNew Queue In Room #{current_player.currentRoom.id}")
-    print(f"Current Path: {current_path}")
-    print(f"Rooms Visited: {rooms_visited}")
+    # print(f"\n\nNew Queue In Room #{current_player.currentRoom.id}")
+    # print(f"Current Path: {current_path}")
+    # print(f"Rooms Visited: {rooms_visited}")
 
     for direction in directions:
         neighbor_room = current_player.currentRoom.getRoomInDirection(direction)
-        print(f"Checking {direction}")
+        # print(f"Checking {direction}")
         if neighbor_room and neighbor_room.id not in rooms_visited:
             new_path = current_path.copy()
             new_visited = rooms_visited.copy()
@@ -270,7 +271,7 @@ while not path_queue.empty():
             for path_dir in new_path:
                 new_player.travel(path_dir)
             path_queue.put((new_player, new_path, new_visited))
-            print(f"Moved {direction} to Room {new_player.currentRoom.id} - {new_path}")
+            # print(f"Moved {direction} to Room {new_player.currentRoom.id} - {new_path}")
             new_room_found = True
 
     if not new_room_found:
@@ -286,18 +287,20 @@ while not path_queue.empty():
             new_player.travel(go_to)            
             new_path.append(go_to)
             if not unexplored_exits(new_player,rooms_visited):
-                print("No unexplored exits")
+                # print("No unexplored exits")
                 path_index -= 1
             else:
-                print(f"Backtracked To Room #{new_player.currentRoom.id}")
+                # print(f"Backtracked To Room #{new_player.currentRoom.id}")
                 new_room_found = True
                 path_queue.put((new_player, new_path,rooms_visited))
 
         if not new_room_found:
-            print("no new rooms found\n")
             if not traversalPath or len(current_path) < len(traversalPath):
                 traversalPath = current_path
+                print(current_path)
+                print(f"New Shortest Path! {len(current_path)} \U0001F389\U0001F389\U0001F389")
             permutations += 1
+            print(f"New Path Finished {permutations}")
 
     def unexplored_exits(player, visited):
         exits = player.currentRoom.getExits()
@@ -316,6 +319,8 @@ while not path_queue.empty():
 #     if not traversalPath or len(path) < len(traversalPath):
 #         traversalPath = path
 
+print(traversalPath)
+print("\U00002B06\U00002B06\U00002B06\U00002B06\U00002B06 Shortest Path \U00002B06\U00002B06\U00002B06\U00002B06\U00002B06")
 print(f"\n\n\U000023F2\U000023F2 Finished In {math.floor(time.time() - start_time) // 60} Minutes \U000023F2\U000023F2")
 print(f"\U0001F92A Found {permutations} Path Permutations \U0001F92A")
 
